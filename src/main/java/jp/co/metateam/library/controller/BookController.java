@@ -1,7 +1,7 @@
 package jp.co.metateam.library.controller;
-
+ 
 import java.util.List;
-
+ 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,44 +11,96 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
+ 
 import jakarta.validation.Valid;
+import jp.co.metateam.library.model.Account;
+import jp.co.metateam.library.model.AccountDto;
 import jp.co.metateam.library.model.BookMst;
 import jp.co.metateam.library.model.BookMstDto;
 import jp.co.metateam.library.service.BookMstService;
 import lombok.extern.log4j.Log4j2;
-
+ 
 /**
  * 書籍関連クラス
  */
 @Log4j2
 @Controller
 public class BookController {
-    
+   
     private final BookMstService bookMstService;
-
+ 
     @Autowired
     public BookController(BookMstService bookMstService){
         this.bookMstService = bookMstService;
     }
-
+ 
     @GetMapping("/book/index")
     public String index(Model model) {
         // 書籍を全件取得
         List<BookMstDto> bookMstList = this.bookMstService.findAvailableWithStockCount();
-        
+       
         model.addAttribute("bookMstList", bookMstList);
-
+ 
         return "book/index";
     }
-
+ 
     @GetMapping("/book/add")
     public String add(Model model) {
         if (!model.containsAttribute("bookMstDto")) {
             model.addAttribute("bookMstDto", new BookMstDto());
         }
-
-        return "book/add";
+ 
+        return "book/add";//書籍登録画面
     }
-    
+    //新しく入力
+   
+    @PostMapping("/book/add")
+    public String add(@Valid @ModelAttribute BookMstDto bookMstDto, BindingResult result, RedirectAttributes ra) {
+        try {
+
+            boolean errTitleFlg = false;
+            boolean errIsbnFlg = false;
+
+            if (bookMstDto.getTitle() == null || bookMstDto.getTitle().trim().isEmpty()) {
+                result.rejectValue("title", "error.title", "書籍名は必須です");
+                errTitleFlg = true;
+            }
+
+            if (bookMstDto.getIsbn() == null || bookMstDto.getIsbn().trim().isEmpty()) {
+                result.rejectValue("isbn", "error.isbn", "ISBNは必須です");
+                errIsbnFlg = true;
+            }
+            if (bookMstDto.getTitle() != null && bookMstDto.getTitle().length() > 255) {
+                result.rejectValue("title", "error.title", "書籍名は255文字以内で入力してください");
+                errTitleFlg = true;
+            }
+            if (bookMstDto.getIsbn() != null && !bookMstDto.getIsbn().matches("^\\d{13}$")) {
+                result.rejectValue("isbn", "error.isbn.format", "ISBNは13桁の数字で入力してください");
+                errIsbnFlg = true;
+                
+            }
+            if (bookMstDto.getIsbn() != null && !bookMstDto.getIsbn().matches("^[0-9]+$")) {
+                result.rejectValue("isbn", "error.isbn.hankaku", "ISBNは半角数字で入力してください");
+                errIsbnFlg = true;
+            }
+            if (errTitleFlg || errIsbnFlg) {
+                throw new Exception("Account already exists.");
+            }
+            if (bookMstDto.getIsbn() != null && bookMstService.existsByIsbn(bookMstDto.getIsbn())) {
+                result.rejectValue("isbn", "error.isbn.duplicate", "このISBNは既に登録されています");
+                errIsbnFlg = true;
+            }
+            
+        
+            bookMstService.save(bookMstDto);
+            return "redirect:/book/index";
+        } catch (Exception e) {
+            log.error(e.getMessage());
+ 
+            ra.addFlashAttribute("bookMstDto", bookMstDto);
+            ra.addFlashAttribute("org.springframework.validation.BindingResult.bookMstDto", result);
+ 
+            return "book/add";
+        }
+    }
 }

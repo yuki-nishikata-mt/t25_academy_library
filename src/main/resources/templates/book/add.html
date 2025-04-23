@@ -16,11 +16,32 @@
                 <div class="page_title">書籍登録</div>
                 <div class="page_contents">
                     <form id="book_register_form" th:object="${bookMstDto}" th:action="@{/book/add}" method="post">
-                        <div class="mb30 flexarea">
-                            <span>
-                                <a th:href="@{/book/index}" class="link">← 一覧へ戻る</a>
-                            </span>
-                        </div>
+                        <div class="mb30" style="text-align: right;">
+                            <a th:href="@{/book/index}" class="link">← 一覧へ戻る</a>
+                        </div>                        
+                        <table>
+                            <caption></caption>
+                            <tbody>
+                                <div>
+                                    <p style="color: red;">*は必須項目です。</p>
+                                
+                                    <!-- 書籍名 -->
+                                    <div style="margin-bottom: 20px;">
+                                        <label for="title">書籍名*</label><br>
+                                        <input type="text" id="title" th:field="*{title}" placeholder="書籍名を入力" name="title" style="width: 100%;" />
+                                        <div class="error_msg" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+                                    </div>
+                                
+                                    <!-- ISBN -->
+                                    <div style="margin-bottom: 20px;">
+                                        <label for="isbn">ISBN*</label><br>
+                                        <input type="text" id="isbn" th:field="*{isbn}" placeholder="ISBNを入力" name="isbn" style="width: 100%;" />
+                                        <div class="error_msg" th:if="${#fields.hasErrors('isbn')}" th:errors="*{isbn}"></div>
+                                    </div>
+                                </div>                                
+                            </tbody>
+                        </table>                        
+                        <button style="background-color: green; color: white;">保存</button>
                     </form>
                 </div>
             </div>
